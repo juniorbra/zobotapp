@@ -1,6 +1,62 @@
 export interface Database {
   public: {
     Tables: {
+      agents: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          description?: string;
+          active: boolean;
+          type: string;
+          prompt?: string;
+          model: string;
+          webhook_url?: string;
+          response_template?: string;
+          advanced_settings?: {
+            temperature: number;
+            max_tokens: number;
+          };
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          description?: string;
+          active?: boolean;
+          type?: string;
+          prompt?: string;
+          model?: string;
+          webhook_url?: string;
+          response_template?: string;
+          advanced_settings?: {
+            temperature: number;
+            max_tokens: number;
+          };
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          description?: string;
+          active?: boolean;
+          type?: string;
+          prompt?: string;
+          model?: string;
+          webhook_url?: string;
+          response_template?: string;
+          advanced_settings?: {
+            temperature: number;
+            max_tokens: number;
+          };
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       profiles: {
         Row: {
           id: string;

@@ -18,7 +18,7 @@ export default function Login() {
     
     try {
       await signIn(email, password);
-      navigate('/conectar-whatsapp');
+      navigate('/painel-controle');
     } catch (error) {
       setError('Email ou senha incorretos. Por favor, verifique suas credenciais.');
     } finally {
@@ -27,42 +27,42 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+    <div className="min-h-screen bg-[#1a1f2e] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-[#131825] rounded-lg shadow-lg p-8">
         <div className="flex justify-center mb-8">
           <img src="https://zobot.app/logozobotwebsite.png" alt="Logo Zobot" className="h-12" />
         </div>
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">Login</h2>
+        <h2 className="text-2xl font-bold text-center text-white mb-8">Login</h2>
         
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-300 text-sm font-bold mb-2">
               Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#232b3d] border border-[#374151] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-300 text-sm font-bold mb-2">
               Senha
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#232b3d] border border-[#374151] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -70,7 +70,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            className={`w-full bg-[#3b82f6] text-white py-2 px-4 rounded-md hover:bg-[#2563eb] focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -78,8 +78,8 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-gray-600">
-          <Link to="/resetar-senha" className="text-blue-600 hover:text-blue-800">
+        <p className="mt-4 text-center text-gray-400">
+          <Link to="/resetar-senha" className="text-blue-400 hover:text-blue-300">
             Esqueceu sua senha?
           </Link>
         </p>
