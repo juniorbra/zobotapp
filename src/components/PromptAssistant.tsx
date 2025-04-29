@@ -50,6 +50,11 @@ const PromptAssistant: React.FC = () => {
     }
   };
 
+  const clearMessages = () => {
+    setMessages([]);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || isLoading) return;
@@ -110,12 +115,21 @@ const PromptAssistant: React.FC = () => {
   return (
     <div className="w-full">
       <div className="bg-[#1e2738] rounded-lg flex flex-col overflow-hidden mb-6">
-        <div className="p-4 bg-[#3b82f6] text-white flex items-center rounded-t-lg">
-          <Bot className="h-6 w-6 mr-3" />
-          <h2 className="text-lg font-semibold">Assistente de Prompt</h2>
+        <div className="p-4 bg-[#3b82f6] text-white flex items-center justify-between rounded-t-lg">
+          <div className="flex items-center">
+            <Bot className="h-6 w-6 mr-3" />
+            <h2 className="text-lg font-semibold">Assistente de Prompt</h2>
+          </div>
+          <button
+            onClick={clearMessages}
+            className="px-3 py-1 bg-[#2563eb] hover:bg-[#1d4ed8] rounded-md text-sm font-medium transition-colors"
+            title="Limpar conversa"
+          >
+            Limpar
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[400px]">
           <div className="bg-[#232b3d] p-4 rounded-lg">
             <p className="text-gray-300">
               Use o assistente para criar instruções para o seu agente IA.

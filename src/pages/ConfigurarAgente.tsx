@@ -57,7 +57,7 @@ const ConfigurarAgente: React.FC = () => {
     name: '',
     description: '',
     active: true,
-    type: 'DIFY',
+    type: 'OPENAI',
     model: 'gpt-3.5-turbo',
     prompt: '',
     webhook_url: '',
@@ -512,8 +512,6 @@ const ConfigurarAgente: React.FC = () => {
                     onChange={handleChange}
                     className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="DIFY">DIFY</option>
-                    <option value="CUSTOM">Personalizado</option>
                     <option value="OPENAI">OpenAI</option>
                   </select>
                 </div>
@@ -527,10 +525,17 @@ const ConfigurarAgente: React.FC = () => {
                     className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    <option value="gpt-3.5-turbo-16k">GPT-3.5 Turbo 16K</option>
                     <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-4-32k">GPT-4 32K</option>
                     <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                    <option value="claude-3-opus">Claude 3 Opus</option>
-                    <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                    <option value="gpt-4-turbo-preview">GPT-4 Turbo Preview</option>
+                    <option value="gpt-4.1">GPT-4.1</option>
+                    <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="text-embedding-ada-002">Text Embedding Ada 002</option>
+                    <option value="text-davinci-003">Text Davinci 003</option>
                   </select>
                 </div>
                 

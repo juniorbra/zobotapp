@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QrCode } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 
 interface WhatsAppResponse {
   base64: string;
@@ -28,15 +29,201 @@ export default function ConectarWhatsapp() {
   });
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [instanceName, setInstanceName] = useState<string | null>(null);
+
+  // Fetch connection state from wa_connections table
+  const fetchConnectionState = async () => {
+    if (!user?.id) {
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('wa_connections')
+        .select('instance_name, state')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('Error fetching connection state:', error);
+        return null;
+      }
+
+      console.log('Fetched connection state from database:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in fetchConnectionState:', error);
+      return null;
+    }
+  };
+
+  // Update connection state in wa_connections table
+  const updateConnectionState = async (instanceName: string, state: string) => {
+    if (!user?.id) {
+      return;
+    }
+
+    try {
+      // Check if a record already exists
+      const { data: existingData } = await supabase
+        .from('wa_connections')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('instance_name', instanceName)
+        .single();
+
+      if (existingData) {
+        // Update existing record
+        const { error } = await supabase
+          .from('wa_connections')
+          .update({ state })
+          .eq('id', existingData.id);
+
+        if (error) {
+          console.error('Error updating connection state:', error);
+        }
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('wa_connections')
+          .insert([
+            {
+              user_id: user.id,
+              instance_name: instanceName,
+              state
+            }
+          ]);
+
+        if (error) {
+          console.error('Error inserting connection state:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error in updateConnectionState:', error);
+    }
+  };
+
+  // Load connection state on component mount and periodically
+  useEffect(() => {
+    const loadInitialState = async () => {
+      if (user?.id) {
+        console.log('Loading initial connection state...');
+        
+        try {
+          // Directly fetch from database first
+          const connectionData = await fetchConnectionState();
+          console.log('Initial connection data from database:', connectionData);
+          
+          if (connectionData && connectionData.state) {
+            setInstanceName(connectionData.instance_name);
+            const status = getStatusFromState(connectionData.state);
+            console.log('Setting initial status from database state:', connectionData.state, 'to UI status:', status);
+            setConnectionStatus(status);
+            
+            // If the state is 'open', also show the disconnect button
+            if (connectionData.state === 'open') {
+              console.log('Connection is open, showing disconnect button');
+            }
+            
+            // If the state is 'connecting', we should try to get the QR code
+            if (connectionData.state === 'connecting' && !qrCodeData) {
+              console.log('Connection is in connecting state, checking for QR code');
+              // We don't have the QR code data stored, so we need to get it from the API
+              // This is just a placeholder - in a real implementation, you would need to
+              // fetch the QR code from the API or have it stored somewhere
+            }
+          } else {
+            console.log('No initial connection data found, checking with API');
+            // If no data in database, perform a full check
+            await checkConnectionState();
+          }
+        } catch (error) {
+          console.error('Error loading initial state:', error);
+          // Fallback to full check
+          await checkConnectionState();
+        }
+      }
+    };
+    
+    // Load initial state
+    loadInitialState();
+    
+    // Set up periodic checking (every 10 seconds)
+    const intervalId = setInterval(() => {
+      if (user?.id && !isCheckingConnection && !isDisconnecting) {
+        checkConnectionState();
+      }
+    }, 10000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, [user]);
+
+  // Map database states to UI text
+  const getStatusFromState = (state: string) => {
+    switch (state) {
+      case 'connecting':
+        return { text: 'Conectando', color: 'text-orange-600' };
+      case 'open':
+        return { text: 'Conectado', color: 'text-green-600' };
+      case 'closed':
+      case 'disconnected':
+        return { text: 'Desconectado', color: 'text-red-600' };
+      case 'verifying':
+        return { text: 'Verificando...', color: 'text-yellow-600' };
+      default:
+        return { text: 'Desconectado', color: 'text-red-600' };
+    }
+  };
 
   const checkConnectionState = async () => {
-    if (!user?.email) {
+    if (!user?.id) {
       return;
     }
     
     setIsCheckingConnection(true);
+    
+    // Set UI to checking state
     setConnectionStatus({ text: 'Verificando...', color: 'text-yellow-600' });
 
+    try {
+      // First check the database
+      const connectionData = await fetchConnectionState();
+      
+      console.log('Current connection data from database:', connectionData);
+      
+      // If we have valid data in the database
+      if (connectionData && connectionData.state) {
+        setInstanceName(connectionData.instance_name);
+        
+        // Only update the database if we're not already in verifying state
+        if (connectionData.state !== 'verifying') {
+          // Map the database state to UI status
+          const status = getStatusFromState(connectionData.state);
+          console.log('Setting status from database state:', connectionData.state, 'to UI status:', status);
+          setConnectionStatus(status);
+        } else {
+          // If we're in verifying state, check with the API
+          await checkWithAPI();
+        }
+      } else {
+        // If no data in database, check with the API
+        await checkWithAPI();
+      }
+    } catch (error) {
+      console.error('Error checking connection state:', error);
+      setConnectionStatus({ text: 'Desconectado', color: 'text-red-600' });
+    } finally {
+      setIsCheckingConnection(false);
+    }
+  };
+
+  // Helper function to check connection with API
+  const checkWithAPI = async () => {
+    if (!user?.email || !user?.id) return;
+    
     try {
       const response = await fetch('https://webhooks.botvance.com.br/webhook/bbbb1235-0cad-482d-ae30-b49ba0122aad', {
         method: 'POST',
@@ -52,32 +239,54 @@ export default function ConectarWhatsapp() {
 
       if (!response.ok) {
         setConnectionStatus({ text: 'Desconectado', color: 'text-red-600' });
+        // If we have an instance name, update the database
+        if (instanceName) {
+          await updateConnectionState(instanceName, 'closed');
+        }
         return;
       }
 
       const data = await response.json();
+      console.log('API response:', data);
       
       // Handle array response format
       const instanceData = Array.isArray(data) ? data[0] : data;
       
       if (instanceData.erro) {
+        console.log('API returned error, setting state to closed');
         setConnectionStatus({ text: 'Desconectado', color: 'text-red-600' });
+        // Update database with disconnected state
+        if (instanceName) {
+          await updateConnectionState(instanceName, 'closed');
+        }
       } else if (instanceData.instance?.state === 'connecting') {
+        console.log('API state is connecting');
         setConnectionStatus({ text: 'Conectando', color: 'text-orange-600' });
+        setInstanceName(instanceData.instance.instanceName);
+        // Update database
+        await updateConnectionState(instanceData.instance.instanceName, 'connecting');
       } else if (instanceData.instance?.state === 'open') {
+        console.log('API state is open');
         setConnectionStatus({ text: 'Conectado', color: 'text-green-600' });
+        setInstanceName(instanceData.instance.instanceName);
+        // Update database
+        await updateConnectionState(instanceData.instance.instanceName, 'open');
       } else {
+        console.log('API returned unknown state, setting to closed');
         setConnectionStatus({ text: 'Desconectado', color: 'text-red-600' });
+        // Update database with disconnected state
+        if (instanceName) {
+          await updateConnectionState(instanceName, 'closed');
+        }
       }
     } catch (error) {
+      console.error('Error in checkWithAPI:', error);
       setConnectionStatus({ text: 'Desconectado', color: 'text-red-600' });
-    } finally {
-      setIsCheckingConnection(false);
     }
   };
 
   const handleDisconnect = async () => {
-    if (!user?.email) {
+    if (!user?.email || !user?.id) {
       setError('Usuário não está autenticado');
       return;
     }
@@ -105,6 +314,11 @@ export default function ConectarWhatsapp() {
         throw new Error(`Falha ao desconectar WhatsApp: ${responseText}`);
       }
 
+      // Update connection state in database
+      if (instanceName) {
+        await updateConnectionState(instanceName, 'closed');
+      }
+
       setConnectionStatus({ text: 'Desconectado', color: 'text-red-600' });
       setQrCodeData(null);
     } catch (err) {
@@ -122,7 +336,7 @@ export default function ConectarWhatsapp() {
     setError('');
 
     try {
-      if (!user?.email) {
+      if (!user?.email || !user?.id) {
         throw new Error('Usuário não está autenticado');
       }
 
@@ -150,7 +364,14 @@ export default function ConectarWhatsapp() {
         throw new Error('QR Code inválido recebido do servidor');
       }
 
+      // When QR code is generated, update the connection state to 'connecting'
+      // We'll use a temporary instance name based on the phone number until we get the real one
+      const tempInstanceName = `wa_${fullPhoneNumber.replace(/\D/g, '')}`;
+      await updateConnectionState(tempInstanceName, 'connecting');
+      setInstanceName(tempInstanceName);
+      
       setQrCodeData(data);
+      setConnectionStatus({ text: 'Conectando', color: 'text-orange-600' });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao conectar WhatsApp';
       setError(errorMessage);
@@ -183,7 +404,20 @@ export default function ConectarWhatsapp() {
             </span>
           </div>
           <button
-            onClick={checkConnectionState}
+            onClick={async () => {
+              // Force a fresh check with the database first
+              const connectionData = await fetchConnectionState();
+              if (connectionData && connectionData.state) {
+                console.log('Manual check - connection data from database:', connectionData);
+                setInstanceName(connectionData.instance_name);
+                const status = getStatusFromState(connectionData.state);
+                console.log('Manual check - setting status from database state:', connectionData.state, 'to UI status:', status);
+                setConnectionStatus(status);
+              } else {
+                // If no data in database, do a full check
+                checkConnectionState();
+              }
+            }}
             disabled={isCheckingConnection}
             className={`px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               isCheckingConnection ? 'opacity-50 cursor-not-allowed' : ''
@@ -191,7 +425,7 @@ export default function ConectarWhatsapp() {
           >
             Verificar
           </button>
-          {connectionStatus.text === 'Conectado' && (
+          {(connectionStatus.text === 'Conectado' || connectionStatus.color === 'text-green-600') && (
             <button
               onClick={handleDisconnect}
               disabled={isDisconnecting}
