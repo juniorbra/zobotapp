@@ -807,18 +807,12 @@ const ConfigurarAgente: React.FC = () => {
       <header className="bg-[#131825] p-4 flex justify-between items-center">
         <div className="flex items-center">
           <button 
-            onClick={async () => {
+            onClick={() => {
               if (isDirty) {
                 const confirm = window.confirm('Existem alterações não salvas. Tem certeza que deseja sair?');
                 if (!confirm) return;
               }
-              // Desativa temporariamente o redirecionamento automático
-              localStorage.setItem('manual_redirect', 'true');
-              if (typeof window !== 'undefined') {
-                const { signOut } = require('../hooks/useAuth').useAuth();
-                await signOut();
-                navigate('/painel-controle');
-              }
+              navigate('/painel-controle');
             }}
             className="flex items-center text-white mr-4"
           >

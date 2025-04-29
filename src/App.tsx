@@ -17,7 +17,7 @@ function RotaProtegida({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('manual_redirect');
       return null;
     }
-    return <Navigate to="/login" />;
+    return <Navigate to="/login/" />;
   }
 
   return <>{children}</>;
@@ -27,7 +27,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login/" element={<Login />} />
         <Route path="/resetar-senha" element={<ResetarSenha />} />
         <Route
           path="/minha-conta"

@@ -90,7 +90,17 @@ const PainelControle: React.FC = () => {
         <div className="flex items-center">
           <button 
             className="flex items-center bg-[#2a3042] hover:bg-[#374151] rounded-full px-4 py-2 mr-2"
-            onClick={() => navigate('/')}
+            onClick={async () => {
+              if (window.confirm('Deseja realmente sair?')) {
+                // Desativa temporariamente o redirecionamento automático
+                localStorage.setItem('manual_redirect', 'true');
+                if (typeof window !== 'undefined') {
+                  const { signOut } = require('../hooks/useAuth').useAuth();
+                  await signOut();
+                  navigate('/login/');
+                }
+              }
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
