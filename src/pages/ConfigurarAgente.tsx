@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { QrCode } from 'lucide-react';
 import PromptAssistant from '../components/PromptAssistant';
+import ConfigurarRespostas from '../components/ConfigurarRespostas';
 
 interface WhatsAppResponse {
   base64: string;
@@ -33,6 +34,7 @@ interface AgentForm {
   webhook_url: string;
   
   // Configurar Respostas (Step 4)
+  question?: string;
   response_template: string;
   
   // Configurações Adicionais (Step 5)
@@ -229,26 +231,43 @@ const ConfigurarAgente: React.FC = () => {
   const fetchAgentData = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch agent data
+      const { data: agentData, error: agentError } = await supabase
         .from('agents')
         .select('*')
         .eq('id', id)
         .eq('user_id', user?.id)
         .single();
 
-      if (error) throw error;
+      if (agentError) throw agentError;
       
-      if (data) {
+      // Fetch QA pair data for this agent
+      const { data: qaData, error: qaError } = await supabase
+        .from('qa_pairs')
+        .select('question, answer')
+        .eq('agent_id', id)
+        .eq('user_id', user?.id)
+        .maybeSingle();
+        
+      if (qaError) {
+        console.error('Error fetching QA pair:', qaError);
+        // Continue anyway, as we have the agent data
+      }
+      
+      if (agentData) {
         setForm({
-          name: data.name || '',
-          description: data.description || '',
-          active: data.active || false,
-          type: data.type || 'DIFY',
-          model: data.model || 'gpt-3.5-turbo',
-          prompt: data.prompt || '',
-          webhook_url: data.webhook_url || '',
-          response_template: data.response_template || '',
-          advanced_settings: data.advanced_settings || {
+          name: agentData.name || '',
+          description: agentData.description || '',
+          active: agentData.active || false,
+          type: agentData.type || 'DIFY',
+          model: agentData.model || 'gpt-3.5-turbo',
+          prompt: agentData.prompt || '',
+          webhook_url: agentData.webhook_url || '',
+          // Use QA data if available, otherwise use agent data
+          question: qaData?.question || '',
+          response_template: qaData?.answer || agentData.response_template || '',
+          advanced_settings: agentData.advanced_settings || {
             temperature: 0.7,
             max_tokens: 2000
           }
@@ -305,7 +324,8 @@ const ConfigurarAgente: React.FC = () => {
 
       // Se for novo agente, insere e redireciona para edição com o novo id
       if (isNewAgent) {
-        const { data, error } = await supabase
+        // Insert the agent first
+        const { data: agentData, error: agentError } = await supabase
           .from('agents')
           .insert([
             {
@@ -324,20 +344,39 @@ const ConfigurarAgente: React.FC = () => {
           .select()
           .single();
 
-        if (error) throw error;
+        if (agentError) throw agentError;
+
+        // If question and answer are provided, insert them into qa_pairs
+        if (form.question && form.response_template && agentData.id) {
+          const { error: qaError } = await supabase
+            .from('qa_pairs')
+            .insert([
+              {
+                question: form.question,
+                answer: form.response_template,
+                agent_id: agentData.id,
+                user_id: user?.id
+              }
+            ]);
+
+          if (qaError) {
+            console.error('Error saving QA pair:', qaError);
+            // Continue anyway, as the agent was created successfully
+          }
+        }
 
         setSuccess('Agente criado com sucesso!');
         // Redireciona para a edição do novo agente para evitar id=undefined em updates
         setTimeout(() => {
-          if (data && data.id) {
-            navigate(`/configurar-agente/${data.id}`);
+          if (agentData && agentData.id) {
+            navigate(`/configurar-agente/${agentData.id}`);
           } else {
             navigate('/');
           }
         }, 1000);
       } else if (id && id !== 'new') {
         // Update existing agent
-        const { error } = await supabase
+        const { error: agentError } = await supabase
           .from('agents')
           .update({
             name: form.name,
@@ -353,7 +392,54 @@ const ConfigurarAgente: React.FC = () => {
           .eq('id', id)
           .eq('user_id', user?.id);
 
-        if (error) throw error;
+        if (agentError) throw agentError;
+
+        // Check if there's an existing QA pair for this agent
+        const { data: existingQA, error: qaFetchError } = await supabase
+          .from('qa_pairs')
+          .select('id')
+          .eq('agent_id', id)
+          .eq('user_id', user?.id)
+          .maybeSingle();
+
+        if (qaFetchError) {
+          console.error('Error fetching QA pair:', qaFetchError);
+        }
+
+        // If question is provided, update or insert QA pair
+        if (form.question && form.response_template) {
+          if (existingQA?.id) {
+            // Update existing QA pair
+            const { error: qaUpdateError } = await supabase
+              .from('qa_pairs')
+              .update({
+                question: form.question,
+                answer: form.response_template
+              })
+              .eq('id', existingQA.id)
+              .eq('user_id', user?.id);
+
+            if (qaUpdateError) {
+              console.error('Error updating QA pair:', qaUpdateError);
+            }
+          } else {
+            // Insert new QA pair
+            const { error: qaInsertError } = await supabase
+              .from('qa_pairs')
+              .insert([
+                {
+                  question: form.question,
+                  answer: form.response_template,
+                  agent_id: id,
+                  user_id: user?.id
+                }
+              ]);
+
+            if (qaInsertError) {
+              console.error('Error inserting QA pair:', qaInsertError);
+            }
+          }
+        }
         
         setSuccess('Agente atualizado com sucesso!');
         setTimeout(() => {
@@ -679,50 +765,20 @@ const ConfigurarAgente: React.FC = () => {
               </div>
             )}
             
-            <div className="mb-6">
-              <label className="block text-gray-300 mb-2">URL do Webhook (Opcional)</label>
-              <input
-                type="text"
-                name="webhook_url"
-                value={form.webhook_url}
-                onChange={handleChange}
-                className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://seu-webhook.com/api/whatsapp"
-              />
-              <p className="text-gray-400 text-sm mt-2">
-                Configure um webhook adicional para integração personalizada (opcional)
-              </p>
-            </div>
+            
           </div>
         );
       case 4:
         return (
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Configurar Respostas</h3>
-            <div className="mb-6">
-              <label className="block text-gray-300 mb-2">Template de Resposta</label>
-              <textarea
-                name="response_template"
-                value={form.response_template}
-                onChange={handleChange}
-                className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-48 font-mono"
-                placeholder="Configure como seu agente responderá às mensagens..."
-              ></textarea>
-              <p className="text-gray-400 text-sm mt-2">
-                Use variáveis como {"{{nome_cliente}}"} para personalizar as respostas
-              </p>
-            </div>
-            
-            <div className="bg-[#1e2738] p-4 rounded-lg mb-6">
-              <h4 className="text-lg font-medium mb-2">Variáveis Disponíveis</h4>
-              <ul className="list-disc list-inside text-gray-300 space-y-1">
-                <li>{"{{nome_cliente}}"} - Nome do cliente</li>
-                <li>{"{{data}}"} - Data atual</li>
-                <li>{"{{hora}}"} - Hora atual</li>
-                <li>{"{{mensagem}}"} - Mensagem recebida</li>
-              </ul>
-            </div>
-          </div>
+          <ConfigurarRespostas 
+            id={id} 
+            user={user} 
+            form={form} 
+            setForm={setForm} 
+            setError={setError} 
+            setSuccess={setSuccess}
+            supabase={supabase}
+          />
         );
       case 5:
         return (

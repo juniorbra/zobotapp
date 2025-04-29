@@ -1,6 +1,35 @@
 export interface Database {
   public: {
     Tables: {
+      qa_pairs: {
+        Row: {
+          id: string;
+          question: string;
+          answer: string;
+          agent_id: string;
+          user_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          question: string;
+          answer: string;
+          agent_id: string;
+          user_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          question?: string;
+          answer?: string;
+          agent_id?: string;
+          user_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       agents: {
         Row: {
           id: string;
