@@ -16,7 +16,7 @@ interface Agent {
 const PainelControle: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<'agents' | 'account'>('agents');
 
@@ -94,7 +94,6 @@ const PainelControle: React.FC = () => {
               if (window.confirm('Deseja realmente sair?')) {
                 // Desativa temporariamente o redirecionamento automático
                 localStorage.setItem('manual_redirect', 'true');
-                const { signOut } = useAuth();
                 await signOut();
                 navigate('/login');
               }
