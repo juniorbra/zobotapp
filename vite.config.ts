@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/login/',  // Changed to match server configuration
+  base: '/',  // Changed to root path for simpler asset references
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
