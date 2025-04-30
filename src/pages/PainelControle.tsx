@@ -94,11 +94,9 @@ const PainelControle: React.FC = () => {
               if (window.confirm('Deseja realmente sair?')) {
                 // Desativa temporariamente o redirecionamento automático
                 localStorage.setItem('manual_redirect', 'true');
-                if (typeof window !== 'undefined') {
-                  const { signOut } = require('../hooks/useAuth').useAuth();
-                  await signOut();
-                  navigate('/login/');
-                }
+                const { signOut } = useAuth();
+                await signOut();
+                navigate('/login');
               }
             }}
           >
