@@ -283,7 +283,7 @@ const ConfigurarAgente: React.FC = () => {
           name: agentData.name || '',
           description: agentData.description || '',
           active: agentData.active || false,
-          type: agentData.type || 'DIFY',
+          type: agentData.type || 'OPENAI',
           model: agentData.model || 'gpt-3.5-turbo',
           prompt: agentData.prompt || '',
           webhook_url: agentData.webhook_url || '',
@@ -584,15 +584,8 @@ const ConfigurarAgente: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={handleSalvarBasico}
-                className="px-6 py-2 bg-[#3b82f6] hover:bg-[#2563eb] rounded-lg"
-              >
-                Salvar
-              </button>
-              <button
-                type="button"
                 onClick={nextStep}
-                className="px-6 py-2 bg-[#2a3042] hover:bg-[#374151] rounded-lg"
+                className="px-6 py-2 bg-[#3b82f6] hover:bg-[#2563eb] rounded-lg"
               >
                 Próximo
               </button>

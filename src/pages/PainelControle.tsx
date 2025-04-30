@@ -195,7 +195,7 @@ const PainelControle: React.FC = () => {
                       </div>
                       
                       <div className="mt-2 mb-6">
-                        <span className="bg-[#3b82f6] text-xs px-3 py-1 rounded-full">DIFY</span>
+                        <span className="bg-[#3b82f6] text-xs px-3 py-1 rounded-full">{agent.type}</span>
                       </div>
                       
                       <div className="mt-auto pt-4 border-t border-[#2a3042] flex justify-between">
