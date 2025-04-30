@@ -3,6 +3,9 @@ version: '3.8'
 services:
   zobot-app:
     image: hvidigaljr/zobot-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     # Removing explicit port mapping since Traefik handles routing
     networks:
       - portainer
