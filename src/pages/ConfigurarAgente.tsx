@@ -19,6 +19,11 @@ interface ConnectionState {
   erro?: string;
 }
 
+// Interface para os modelos de LLM por provedor
+interface LLMModels {
+  [provider: string]: string[];
+}
+
 interface AgentForm {
   // Informações Básicas (Step 1)
   name: string;
@@ -49,6 +54,24 @@ const ConfigurarAgente: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isNewAgent = id === 'new';
+  
+  // Definir os modelos disponíveis para cada provedor
+  const [availableModels, setAvailableModels] = useState<LLMModels>({
+    OPENAI: [
+      'gpt-3.5-turbo',
+      'gpt-3.5-turbo-16k',
+      'gpt-4',
+      'gpt-4-32k',
+      'gpt-4-turbo',
+      'gpt-4-turbo-preview',
+      'gpt-4.1',
+      'gpt-4.1-mini',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'text-embedding-ada-002',
+      'text-davinci-003'
+    ]
+  });
   
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
@@ -280,6 +303,20 @@ const ConfigurarAgente: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Atualizar o modelo quando o tipo de provedor mudar
+  useEffect(() => {
+    // Se o tipo mudar e o modelo atual não estiver disponível no novo tipo,
+    // selecione o primeiro modelo disponível
+    if (form.type && availableModels[form.type]) {
+      if (!availableModels[form.type].includes(form.model)) {
+        setForm(prev => ({
+          ...prev,
+          model: availableModels[form.type][0]
+        }));
+      }
+    }
+  }, [form.type]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -610,18 +647,11 @@ const ConfigurarAgente: React.FC = () => {
                     onChange={handleChange}
                     className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                    <option value="gpt-3.5-turbo-16k">GPT-3.5 Turbo 16K</option>
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="gpt-4-32k">GPT-4 32K</option>
-                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                    <option value="gpt-4-turbo-preview">GPT-4 Turbo Preview</option>
-                    <option value="gpt-4.1">GPT-4.1</option>
-                    <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="gpt-4o-mini">GPT-4o Mini</option>
-                    <option value="text-embedding-ada-002">Text Embedding Ada 002</option>
-                    <option value="text-davinci-003">Text Davinci 003</option>
+                    {availableModels[form.type]?.map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 

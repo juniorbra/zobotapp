@@ -38,13 +38,13 @@ docker login
 2. Build and tag the image:
 
 ```bash
-docker build -t zobot/zobot-app:latest .
+docker build -t hvidigaljr/zobot-app:latest .
 ```
 
 3. Push the image to Docker Hub:
 
 ```bash
-docker push zobot/zobot-app:latest
+docker push hvidigaljr/zobot-app:latest
 ```
 
 #### Automated Publishing with GitHub Actions
