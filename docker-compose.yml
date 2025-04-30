@@ -1,15 +1,8 @@
-version: "3.7"
+version: '3.8'
+
 services:
-  zobot-app:
+  web:
     image: hvidigaljr/zobot-app:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-    environment:
-      - VITE_SUPABASE_URL=https://oovwvznxynyzqwjkvoxn.supabase.co
-      - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vdnd2em54eW55enF3amt2b3huIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4Nzk3MjUsImV4cCI6MjA2MTQ1NTcyNX0.wBtJm5I8-TUyTbcWsx0tG4IDIsnmzyV_afKMNCm-oVM
     networks:
       - portainer
     deploy:
@@ -20,36 +13,15 @@ services:
           - node.role == manager
       labels:
         - traefik.enable=true
-        - traefik.http.routers.zobot_app.rule=Host(`meu.zobot.top`)
-        - traefik.http.routers.zobot_app.entrypoints=websecure
-        - traefik.http.routers.zobot_app.tls.certresolver=letsencryptresolver
-        - traefik.http.services.zobot_app.loadbalancer.server.port=80
-        - traefik.http.services.zobot_app.loadbalancer.passHostHeader=true
-        - traefik.http.routers.zobot_app.service=zobot_app
-
-  # Uncomment if you need a database service
-  # db:
-  #   image: postgres:15-alpine
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   environment:
-  #     - POSTGRES_PASSWORD=your_secure_password
-  #     - POSTGRES_USER=zobot
-  #     - POSTGRES_DB=zobot_db
-  #   networks:
-  #     - portainer
-  #   deploy:
-  #     mode: replicated
-  #     replicas: 1
-  #     placement:
-  #       constraints:
-  #         - node.role == manager
-
-volumes:
-  # If you need a database volume, uncomment the following:
-  # postgres_data:
-  #   external: true
-  #   name: zobot_postgres_data
+        - traefik.http.routers.g2d.rule=Host(`meu.zobot.top`)
+        - traefik.http.routers.g2d.entrypoints=websecure
+        - traefik.http.routers.g2d.tls.certresolver=letsencryptresolver
+        - traefik.http.services.g2d.loadbalancer.server.port=3000
+        - traefik.http.services.g2d.loadbalancer.passHostHeader=true
+        - traefik.http.routers.g2d.service=zobot-app
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
 
 networks:
   portainer:
