@@ -354,6 +354,7 @@ const [form, setForm] = useState<AgentForm>({
       ...prev,
       [name]: checked
     }));
+    setIsDirty(true);
   };
 
   const handleAdvancedSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -396,7 +397,16 @@ const [form, setForm] = useState<AgentForm>({
               webhook_url: form.webhook_url,
               response_template: form.response_template,
               advanced_settings: form.advanced_settings,
-              user_id: user?.id
+              user_id: user?.id,
+              // Adiciona todos os campos adicionais
+              stop_bot_on_message: form.stop_bot_on_message,
+              pause_window_minutes: form.pause_window_minutes,
+              split_long_messages: form.split_long_messages,
+              show_typing_indicator: form.show_typing_indicator,
+              typing_delay_per_char_ms: form.typing_delay_per_char_ms,
+              concat_messages: form.concat_messages,
+              concat_time_seconds: form.concat_time_seconds,
+              context_window_size: form.context_window_size
             }
           ])
           .select()
@@ -445,7 +455,16 @@ const [form, setForm] = useState<AgentForm>({
             model: form.model,
             webhook_url: form.webhook_url,
             response_template: form.response_template,
-            advanced_settings: form.advanced_settings
+            advanced_settings: form.advanced_settings,
+            // Adiciona todos os campos adicionais
+            stop_bot_on_message: form.stop_bot_on_message,
+            pause_window_minutes: form.pause_window_minutes,
+            split_long_messages: form.split_long_messages,
+            show_typing_indicator: form.show_typing_indicator,
+            typing_delay_per_char_ms: form.typing_delay_per_char_ms,
+            concat_messages: form.concat_messages,
+            concat_time_seconds: form.concat_time_seconds,
+            context_window_size: form.context_window_size
           })
           .eq('id', id)
           .eq('user_id', user?.id);
@@ -1189,7 +1208,7 @@ const [form, setForm] = useState<AgentForm>({
                   </button>
                   <button
                     type="button"
-                    onClick={nextStep}
+                    onClick={currentStep === totalSteps ? handleSubmit : nextStep}
                     className="px-6 py-2 bg-[#3b82f6] hover:bg-[#2563eb] rounded-lg"
                   >
                     {currentStep === totalSteps ? 'Finalizar' : 'Próximo'}
