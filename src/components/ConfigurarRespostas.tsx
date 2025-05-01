@@ -247,7 +247,55 @@ const ConfigurarRespostas: React.FC<ConfigurarRespostasProps> = ({
   return (
     <div>
       <h3 className="text-xl font-semibold mb-4">Configurar Respostas</h3>
-      
+
+      {/* Form for adding/editing QA pairs */}
+      {(isAddingNew || editingPairId) && (
+        <div className="bg-[#1e2738] p-4 rounded-lg mb-6">
+          <h4 className="text-lg font-medium mb-4">
+            {editingPairId ? 'Editar Par' : 'Adicionar Novo Par'}
+          </h4>
+
+          <div className="mb-4">
+            <label className="block text-gray-300 mb-2">Pergunta</label>
+            <textarea
+              name="question"
+              value={form.question || ''}
+              onChange={(e) => setForm({ ...form, question: e.target.value })}
+              className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 font-mono"
+              placeholder="Digite a pergunta que o usuário pode fazer..."
+            ></textarea>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-gray-300 mb-2">Resposta</label>
+            <textarea
+              name="response_template"
+              value={form.response_template}
+              onChange={(e) => setForm({ ...form, response_template: e.target.value })}
+              className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-48 font-mono"
+              placeholder="Digite a resposta para a pergunta acima..."
+            ></textarea>
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="px-4 py-2 bg-[#2a3042] hover:bg-[#374151] rounded-md text-white"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={editingPairId ? handleUpdateQAPair : handleAddQAPair}
+              className="px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] rounded-md text-white"
+            >
+              {editingPairId ? 'Atualizar' : 'Adicionar'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* List of QA pairs */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -269,13 +317,13 @@ const ConfigurarRespostas: React.FC<ConfigurarRespostasProps> = ({
             Adicionar Novo
           </button>
         </div>
-        
+
         {qaPairs.length === 0 && !isAddingNew && !editingPairId && (
           <div className="bg-[#1e2738] p-4 rounded-lg mb-4 text-center">
             <p className="text-gray-400">Nenhum par de pergunta e resposta cadastrado.</p>
           </div>
         )}
-        
+
         {qaPairs.map(pair => (
           <div key={pair.id} className="bg-[#1e2738] p-4 rounded-lg mb-4">
             <div className="flex justify-between items-start mb-2">
@@ -303,54 +351,6 @@ const ConfigurarRespostas: React.FC<ConfigurarRespostasProps> = ({
           </div>
         ))}
       </div>
-      
-      {/* Form for adding/editing QA pairs */}
-      {(isAddingNew || editingPairId) && (
-        <div className="bg-[#1e2738] p-4 rounded-lg mb-6">
-          <h4 className="text-lg font-medium mb-4">
-            {editingPairId ? 'Editar Par' : 'Adicionar Novo Par'}
-          </h4>
-          
-          <div className="mb-4">
-            <label className="block text-gray-300 mb-2">Pergunta</label>
-            <textarea
-              name="question"
-              value={form.question || ''}
-              onChange={(e) => setForm({ ...form, question: e.target.value })}
-              className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 font-mono"
-              placeholder="Digite a pergunta que o usuário pode fazer..."
-            ></textarea>
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-gray-300 mb-2">Resposta</label>
-            <textarea
-              name="response_template"
-              value={form.response_template}
-              onChange={(e) => setForm({ ...form, response_template: e.target.value })}
-              className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-48 font-mono"
-              placeholder="Digite a resposta para a pergunta acima..."
-            ></textarea>
-          </div>
-          
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              className="px-4 py-2 bg-[#2a3042] hover:bg-[#374151] rounded-md text-white"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={editingPairId ? handleUpdateQAPair : handleAddQAPair}
-              className="px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] rounded-md text-white"
-            >
-              {editingPairId ? 'Atualizar' : 'Adicionar'}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

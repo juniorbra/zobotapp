@@ -29,24 +29,34 @@ interface AgentForm {
   name: string;
   description: string;
   active: boolean;
-  
+
   // Configurar IA (Step 2)
   type: string;
   model: string;
   prompt: string;
-  
+
   // Conectar com WhatsApp (Step 3)
   webhook_url: string;
-  
+
   // Configurar Respostas (Step 4)
   question?: string;
   response_template: string;
-  
+
   // Configurações Adicionais (Step 5)
   advanced_settings: {
     temperature: number;
     max_tokens: number;
   };
+
+  // Novos campos de configurações adicionais
+  stop_bot_on_message: boolean;
+  pause_window_minutes: number;
+  split_long_messages: boolean;
+  show_typing_indicator: boolean;
+  typing_delay_per_char_ms: number;
+  concat_messages: boolean;
+  concat_time_seconds: number;
+  context_window_size: number;
 }
 
 const ConfigurarAgente: React.FC = () => {
@@ -56,42 +66,40 @@ const ConfigurarAgente: React.FC = () => {
   const isNewAgent = id === 'new';
   
   // Definir os modelos disponíveis para cada provedor
-  const [availableModels, setAvailableModels] = useState<LLMModels>({
-    OPENAI: [
-      'gpt-3.5-turbo',
-      'gpt-3.5-turbo-16k',
-      'gpt-4',
-      'gpt-4-32k',
-      'gpt-4-turbo',
-      'gpt-4-turbo-preview',
-      'gpt-4.1',
-      'gpt-4.1-mini',
-      'gpt-4o',
-      'gpt-4o-mini',
-      'text-embedding-ada-002',
-      'text-davinci-003'
-    ]
-  });
+const [availableModels, setAvailableModels] = useState<LLMModels>({
+  OPENAI: [
+    'gpt-4.1-mini',
+    'gpt-4o-mini'
+  ]
+});
   
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
   // Submenu state for IA config vs Prompt Assistant (must be at top level)
   const [iaTab, setIaTab] = useState<'config' | 'assistant'>('config');
   
-  const [form, setForm] = useState<AgentForm>({
-    name: '',
-    description: '',
-    active: true,
-    type: 'OPENAI',
-    model: 'gpt-3.5-turbo',
-    prompt: '',
-    webhook_url: '',
-    response_template: '',
-    advanced_settings: {
-      temperature: 0.7,
-      max_tokens: 2000
-    }
-  });
+const [form, setForm] = useState<AgentForm>({
+  name: '',
+  description: '',
+  active: true,
+  type: 'OPENAI',
+  model: 'gpt-4.1-mini',
+  prompt: '',
+  webhook_url: '',
+  response_template: '',
+  advanced_settings: {
+    temperature: 0.7,
+    max_tokens: 2000
+  },
+  stop_bot_on_message: true,
+  pause_window_minutes: 15,
+  split_long_messages: true,
+  show_typing_indicator: true,
+  typing_delay_per_char_ms: 50,
+  concat_messages: true,
+  concat_time_seconds: 7,
+  context_window_size: 5
+});
   const [isDirty, setIsDirty] = useState(false);
   
   const [loading, setLoading] = useState(false);
@@ -283,8 +291,12 @@ const ConfigurarAgente: React.FC = () => {
           name: agentData.name || '',
           description: agentData.description || '',
           active: agentData.active || false,
-          type: agentData.type || 'OPENAI',
-          model: agentData.model || 'gpt-3.5-turbo',
+          // Força o tipo para "OPENAI" (case-sensitive)
+          type: 'OPENAI',
+          // Garante que o modelo padrão seja um dos dois permitidos
+          model: ['gpt-4.1-mini', 'gpt-4o-mini'].includes(agentData.model)
+            ? agentData.model
+            : 'gpt-4.1-mini',
           prompt: agentData.prompt || '',
           webhook_url: agentData.webhook_url || '',
           // Use QA data if available, otherwise use agent data
@@ -293,7 +305,16 @@ const ConfigurarAgente: React.FC = () => {
           advanced_settings: agentData.advanced_settings || {
             temperature: 0.7,
             max_tokens: 2000
-          }
+          },
+          // Novos campos de configurações adicionais
+          stop_bot_on_message: agentData.stop_bot_on_message ?? true,
+          pause_window_minutes: agentData.pause_window_minutes ?? 15,
+          split_long_messages: agentData.split_long_messages ?? true,
+          show_typing_indicator: agentData.show_typing_indicator ?? true,
+          typing_delay_per_char_ms: agentData.typing_delay_per_char_ms ?? 50,
+          concat_messages: agentData.concat_messages ?? true,
+          concat_time_seconds: agentData.concat_time_seconds ?? 7,
+          context_window_size: agentData.context_window_size ?? 5
         });
       }
     } catch (error) {
@@ -847,35 +868,126 @@ const ConfigurarAgente: React.FC = () => {
               </div>
             </div>
             
-            <div className="bg-[#1e2738] p-4 rounded-lg mb-6">
-              <h4 className="text-lg font-medium mb-2">Configurações de Sessão</h4>
-              <p className="text-gray-300 mb-2">
-                Configure como o agente deve se comportar durante a sessão de conversa.
-              </p>
-              <div className="space-y-2">
-                <label className="flex items-center">
+
+            {/* Novas opções avançadas */}
+            <div className="bg-[#1e2738] p-4 rounded-lg mb-6 space-y-6">
+
+              {/* Tamanho da janela de contexto */}
+              <div>
+                <label className="text-white font-medium text-lg mb-1 block">Tamanho da janela de contexto</label>
+                <div className="flex items-center space-x-2 mb-1">
+                  <input
+                    type="number"
+                    name="context_window_size"
+                    min={1}
+                    value={form.context_window_size}
+                    onChange={handleChange}
+                    className="w-20 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                  />
+                  <span className="text-gray-400">mensagens</span>
+                </div>
+                <span className="text-gray-400 text-xs">
+                  Quantidade de mensagens anteriores que o bot considera para gerar uma resposta contextualizada.
+                </span>
+              </div>
+              {/* Parar o bot ao enviar mensagem */}
+              <div>
+                <label className="flex items-center mb-2">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
-                    defaultChecked
+                    name="stop_bot_on_message"
+                    checked={form.stop_bot_on_message}
+                    onChange={handleCheckboxChange}
+                    className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
                   />
-                  <span className="ml-2 text-gray-300">Manter histórico de conversa</span>
+                  <span className="ml-2 text-white font-medium text-lg">Parar bot ao enviar mensagem</span>
                 </label>
-                <label className="flex items-center">
+                <span className="text-gray-400 text-sm block mb-2">Parar o bot ao atendente enviar uma mensagem</span>
+                <div className="flex items-center space-x-2 mb-1">
+                  <label className="text-gray-300 font-medium">Janela de pausa</label>
+                  <input
+                    type="number"
+                    name="pause_window_minutes"
+                    min={1}
+                    value={form.pause_window_minutes}
+                    onChange={handleChange}
+                    className="w-20 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white ml-2"
+                  />
+                  <span className="text-gray-400">min</span>
+                </div>
+                <span className="text-gray-400 text-xs">tempo de pausa do bot para eu responder as mensagens</span>
+              </div>
+
+              {/* Dividir mensagens em partes menores */}
+              <div>
+                <label className="flex items-center mb-2">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
-                    defaultChecked
+                    name="split_long_messages"
+                    checked={form.split_long_messages}
+                    onChange={handleCheckboxChange}
+                    className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
                   />
-                  <span className="ml-2 text-gray-300">Permitir anexos</span>
+                  <span className="ml-2 text-white font-medium text-lg">Dividir mensagens em partes menores</span>
                 </label>
-                <label className="flex items-center">
+                <span className="text-gray-400 text-sm">Dividir mensagens longas em múltiplas mensagens menores</span>
+              </div>
+
+              {/* Mostrar indicador de digitação */}
+              <div>
+                <label className="flex items-center mb-2">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
+                    name="show_typing_indicator"
+                    checked={form.show_typing_indicator}
+                    onChange={handleCheckboxChange}
+                    className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
                   />
-                  <span className="ml-2 text-gray-300">Modo de depuração</span>
+                  <span className="ml-2 text-white font-medium text-lg">Mostrar indicador de digitação</span>
                 </label>
+                <span className="text-gray-400 text-sm block mb-2">
+                  Exibir indicador de digitação/gravação no WhatsApp durante o processamento
+                </span>
+                <div className="flex items-center space-x-2 mb-1">
+                  <label className="text-gray-300 font-medium">Tempo por caractere</label>
+                  <input
+                    type="number"
+                    name="typing_delay_per_char_ms"
+                    min={0}
+                    value={form.typing_delay_per_char_ms}
+                    onChange={handleChange}
+                    className="w-20 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white ml-2"
+                  />
+                  <span className="text-gray-400">ms</span>
+                </div>
+                <span className="text-gray-400 text-xs">Atraso de simulação de digitação por caractere</span>
+              </div>
+
+              {/* Concatenação de mensagens */}
+              <div>
+                <label className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    name="concat_messages"
+                    checked={form.concat_messages}
+                    onChange={handleCheckboxChange}
+                    className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
+                  />
+                  <span className="ml-2 text-white font-medium text-lg">Concatenação de mensagens</span>
+                </label>
+                <div className="flex items-center space-x-2 mb-1">
+                  <label className="text-gray-300 font-medium">Tempo de concatenação</label>
+                  <input
+                    type="number"
+                    name="concat_time_seconds"
+                    min={1}
+                    value={form.concat_time_seconds}
+                    onChange={handleChange}
+                    className="w-20 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white ml-2"
+                  />
+                  <span className="text-gray-400">seg</span>
+                </div>
+                <span className="text-gray-400 text-xs">tempo que o bot vai juntar mensagens consecutivas e dar uma resposta apenas</span>
               </div>
             </div>
           </div>
