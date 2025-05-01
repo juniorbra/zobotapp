@@ -110,7 +110,28 @@ const [form, setForm] = useState<AgentForm>({
   // WhatsApp connection states
   const [countryCode, setCountryCode] = useState('+55');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [connectionName, setConnectionName] = useState('');
   const [qrCodeData, setQrCodeData] = useState<WhatsAppResponse | null>(null);
+
+  // Preencher campos do WhatsApp com dados do wa_connections ao entrar no passo 5
+  useEffect(() => {
+    const fetchWAConnection = async () => {
+      if (currentStep === 5 && id && id !== 'new' && user?.id) {
+        const { data } = await supabase
+          .from('wa_connections')
+          .select('instance_name, numero_wa')
+          .eq('agent_id', id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (data) {
+          setConnectionName(data.instance_name || '');
+          setPhoneNumber(data.numero_wa || '');
+        }
+      }
+    };
+    fetchWAConnection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, id, user?.id]);
   const [whatsappError, setWhatsappError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<{ text: string; color: string }>({
@@ -223,7 +244,9 @@ const [form, setForm] = useState<AgentForm>({
         },
         body: JSON.stringify({
           email: user.email,
-          telefone: fullPhoneNumber
+          telefone: fullPhoneNumber,
+          nome_conexao: connectionName,
+          agent_id: id
         }),
       });
 
@@ -433,6 +456,35 @@ const [form, setForm] = useState<AgentForm>({
           }
         }
 
+        // Atualiza ou insere wa_connections
+        if (agentData && agentData.id && connectionName && phoneNumber) {
+          const { data: existingConn } = await supabase
+            .from('wa_connections')
+            .select('id')
+            .eq('agent_id', agentData.id)
+            .eq('user_id', user?.id)
+            .maybeSingle();
+
+          const waPayload = {
+            instance_name: connectionName,
+            numero_wa: phoneNumber,
+            agent_id: agentData.id,
+            user_id: user?.id
+          };
+
+          if (existingConn?.id) {
+            await supabase
+              .from('wa_connections')
+              .update(waPayload)
+              .eq('id', existingConn.id)
+              .eq('user_id', user?.id);
+          } else {
+            await supabase
+              .from('wa_connections')
+              .insert([waPayload]);
+          }
+        }
+
         setSuccess('Agente criado com sucesso!');
         // Redireciona para a edição do novo agente para evitar id=undefined em updates
         setTimeout(() => {
@@ -517,7 +569,36 @@ const [form, setForm] = useState<AgentForm>({
             }
           }
         }
-        
+
+        // Atualiza ou insere wa_connections
+        if (id && connectionName && phoneNumber) {
+          const { data: existingConn } = await supabase
+            .from('wa_connections')
+            .select('id')
+            .eq('agent_id', id)
+            .eq('user_id', user?.id)
+            .maybeSingle();
+
+          const waPayload = {
+            instance_name: connectionName,
+            numero_wa: phoneNumber,
+            agent_id: id,
+            user_id: user?.id
+          };
+
+          if (existingConn?.id) {
+            await supabase
+              .from('wa_connections')
+              .update(waPayload)
+              .eq('id', existingConn.id)
+              .eq('user_id', user?.id);
+          } else {
+            await supabase
+              .from('wa_connections')
+              .insert([waPayload]);
+          }
+        }
+
         setSuccess('Agente atualizado com sucesso!');
         setTimeout(() => {
           navigate('/');
@@ -557,7 +638,7 @@ const [form, setForm] = useState<AgentForm>({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        // Função para salvar no webhook
+        // Informações Básicas (antigo case 1)
         const handleSalvarBasico = async () => {
           try {
             const payload = {
@@ -633,6 +714,7 @@ const [form, setForm] = useState<AgentForm>({
           </div>
         );
       case 2:
+        // Configurar IA (antigo case 2)
         return (
           <div>
             <div className="flex mb-6 border-b border-[#2a3042]">
@@ -704,134 +786,8 @@ const [form, setForm] = useState<AgentForm>({
             )}
           </div>
         );
-
-  // Check connection state when step 3 is active
-  useEffect(() => {
-    if (currentStep === 3) {
-      checkConnectionState();
-    }
-  }, [currentStep]);
-
       case 3:
-        return (
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Conectar com WhatsApp</h3>
-            
-            {/* Status Indicator */}
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#374151] bg-[#2a3042]">
-                <div className={`w-3 h-3 rounded-full ${
-                  connectionStatus.text === 'Conectado' ? 'bg-green-500' :
-                  connectionStatus.text === 'Conectando' ? 'bg-orange-500' :
-                  connectionStatus.text === 'Verificando...' ? 'bg-yellow-500' :
-                  connectionStatus.text === 'Desconectado' ? 'bg-red-500' : 'bg-gray-400'
-                }`} />
-                <span className={`font-medium ${connectionStatus.color}`}>
-                  {connectionStatus.text}
-                </span>
-              </div>
-              <button
-                onClick={checkConnectionState}
-                disabled={isCheckingConnection}
-                className={`px-4 py-2 text-sm font-medium text-white bg-[#3b82f6] hover:bg-[#2563eb] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isCheckingConnection ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                Verificar
-              </button>
-              {connectionStatus.text === 'Conectado' && (
-                <button
-                  onClick={handleDisconnect}
-                  disabled={isDisconnecting}
-                  className={`px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 ${
-                    isDisconnecting ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  Desconectar
-                </button>
-              )}
-            </div>
-
-            {whatsappError && (
-              <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200">
-                {whatsappError}
-              </div>
-            )}
-
-            {!qrCodeData ? (
-              <div className="bg-[#1e2738] p-6 rounded-lg mb-6">
-                <div className="flex items-center mb-4">
-                  <QrCode className="h-6 w-6 text-[#3b82f6] mr-2" />
-                  <h4 className="text-lg font-medium">Conectar WhatsApp</h4>
-                </div>
-                
-                <form onSubmit={handleConnectWhatsApp} className="space-y-4">
-                  <div>
-                    <label className="block text-gray-300 mb-2">
-                      Número do WhatsApp
-                    </label>
-                    <div className="flex">
-                      <select
-                        value={countryCode}
-                        onChange={(e) => setCountryCode(e.target.value)}
-                        className="w-24 px-3 py-2 bg-[#2a3042] border border-[#374151] rounded-l-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="+55">+55</option>
-                      </select>
-                      <input
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="DDD + Número"
-                        className="flex-1 px-3 py-2 bg-[#2a3042] border border-[#374151] rounded-r-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isConnecting}
-                    className={`w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium ${
-                      isConnecting ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isConnecting ? 'Conectando...' : 'Conectar WhatsApp'}
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div className="bg-[#1e2738] p-6 rounded-lg mb-6 text-center">
-                <h4 className="text-lg font-medium mb-4">Escaneie o QR Code</h4>
-                <div className="mb-4 bg-white p-4 inline-block rounded">
-                  {qrCodeData.base64 ? (
-                    <img
-                      src={qrCodeData.base64}
-                      alt="QR Code WhatsApp"
-                      className="mx-auto"
-                    />
-                  ) : (
-                    <p className="text-red-600">QR Code não disponível</p>
-                  )}
-                </div>
-                {qrCodeData.pairingCode && (
-                  <p className="text-gray-300 mb-4">
-                    Código de pareamento: <span className="font-mono font-bold">{qrCodeData.pairingCode}</span>
-                  </p>
-                )}
-                <button
-                  onClick={() => setQrCodeData(null)}
-                  className="text-[#3b82f6] hover:text-[#2563eb]"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            )}
-            
-            
-          </div>
-        );
-      case 4:
+        // Configurar Respostas (antigo case 4)
         return (
           <ConfigurarRespostas 
             id={id} 
@@ -843,7 +799,8 @@ const [form, setForm] = useState<AgentForm>({
             supabase={supabase}
           />
         );
-      case 5:
+      case 4:
+        // Configurações Adicionais (antigo case 5)
         return (
           <div>
             <h3 className="text-xl font-semibold mb-4">Configurações Adicionais</h3>
@@ -1011,6 +968,165 @@ const [form, setForm] = useState<AgentForm>({
             </div>
           </div>
         );
+      case 5:
+        // Conectar com WhatsApp (antigo case 3)
+        if (id === 'new') {
+          return (
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Conectar com WhatsApp</h3>
+              <div className="bg-yellow-900/30 border border-yellow-600 text-yellow-200 rounded-lg p-6 mb-6">
+                <strong>Salve as alterações do agente antes de conectar com o WhatsApp.</strong>
+                <div className="mt-2 text-sm">
+                  Para vincular a conexão ao agente, clique em <b>Salvar Alterações</b> ou <b>Finalizar</b> para criar o agente, depois retorne a este passo.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="w-full bg-gray-600 text-white py-3 px-4 rounded-md opacity-60 cursor-not-allowed"
+                disabled
+              >
+                Conectar WhatsApp
+              </button>
+            </div>
+          );
+        }
+        // (restante do conteúdo do antigo case 3, igual estava antes)
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">Conectar com WhatsApp</h3>
+            
+            {/* Status Indicator */}
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#374151] bg-[#2a3042]">
+                <div className={`w-3 h-3 rounded-full ${
+                  connectionStatus.text === 'Conectado' ? 'bg-green-500' :
+                  connectionStatus.text === 'Conectando' ? 'bg-orange-500' :
+                  connectionStatus.text === 'Verificando...' ? 'bg-yellow-500' :
+                  connectionStatus.text === 'Desconectado' ? 'bg-red-500' : 'bg-gray-400'
+                }`} />
+                <span className={`font-medium ${connectionStatus.color}`}>
+                  {connectionStatus.text}
+                </span>
+              </div>
+              <button
+                onClick={checkConnectionState}
+                disabled={isCheckingConnection}
+                className={`px-4 py-2 text-sm font-medium text-white bg-[#3b82f6] hover:bg-[#2563eb] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isCheckingConnection ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                Verificar
+              </button>
+              {connectionStatus.text === 'Conectado' && (
+                <button
+                  onClick={handleDisconnect}
+                  disabled={isDisconnecting}
+                  className={`px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 ${
+                    isDisconnecting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  Desconectar
+                </button>
+              )}
+            </div>
+
+            {whatsappError && (
+              <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200">
+                {whatsappError}
+              </div>
+            )}
+
+            {!qrCodeData ? (
+              <div className="bg-[#1e2738] p-6 rounded-lg mb-6">
+                <div className="flex items-center mb-4">
+                  <QrCode className="h-6 w-6 text-[#3b82f6] mr-2" />
+                  <h4 className="text-lg font-medium">Conectar WhatsApp</h4>
+                </div>
+                
+                <form onSubmit={handleConnectWhatsApp} className="space-y-4">
+                  <div>
+                    <label className="block text-gray-300 mb-2">
+                      Nome da Conexão
+                    </label>
+                    <input
+                      type="text"
+                      value={connectionName}
+                      onChange={(e) => {
+                        const raw = e.target.value.toLowerCase();
+                        const filtered = raw.replace(/[^a-z0-9\-_]/g, '').slice(0, 12);
+                        setConnectionName(filtered);
+                      }}
+                      maxLength={12}
+                      placeholder="Digite um nome (até 12 caracteres)"
+                      className="w-full px-3 py-2 bg-[#2a3042] border border-[#374151] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-2">
+                      Número do WhatsApp
+                    </label>
+                    <div className="flex">
+                      <select
+                        value={countryCode}
+                        onChange={(e) => setCountryCode(e.target.value)}
+                        className="w-24 px-3 py-2 bg-[#2a3042] border border-[#374151] rounded-l-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="+55">+55</option>
+                      </select>
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="DDD + Número"
+                        className="flex-1 px-3 py-2 bg-[#2a3042] border border-[#374151] rounded-r-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isConnecting}
+                    className={`w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium ${
+                      isConnecting ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isConnecting ? 'Conectando...' : 'Conectar WhatsApp'}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="bg-[#1e2738] p-6 rounded-lg mb-6 text-center">
+                <h4 className="text-lg font-medium mb-4">Escaneie o QR Code</h4>
+                <div className="mb-4 bg-white p-4 inline-block rounded">
+                  {qrCodeData.base64 ? (
+                    <img
+                      src={qrCodeData.base64}
+                      alt="QR Code WhatsApp"
+                      className="mx-auto"
+                    />
+                  ) : (
+                    <p className="text-red-600">QR Code não disponível</p>
+                  )}
+                </div>
+                {qrCodeData.pairingCode && (
+                  <p className="text-gray-300 mb-4">
+                    Código de pareamento: <span className="font-mono font-bold">{qrCodeData.pairingCode}</span>
+                  </p>
+                )}
+                <button
+                  onClick={() => setQrCodeData(null)}
+                  className="text-[#3b82f6] hover:text-[#2563eb]"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            )}
+            
+            
+          </div>
+        );
       default:
         return null;
     }
@@ -1098,7 +1214,6 @@ const [form, setForm] = useState<AgentForm>({
                 <p className="text-sm text-gray-300">Configure o nome, descrição e aparência do seu agente</p>
               </div>
             </div>
-            
             {/* Step 2 */}
             <div 
               onClick={() => goToStep(2)}
@@ -1116,7 +1231,6 @@ const [form, setForm] = useState<AgentForm>({
                 <p className="text-sm text-gray-300">Configure a ferramenta de Inteligência Artificial</p>
               </div>
             </div>
-            
             {/* Step 3 */}
             <div 
               onClick={() => goToStep(3)}
@@ -1130,11 +1244,10 @@ const [form, setForm] = useState<AgentForm>({
                 <span className="font-bold">3</span>
               </div>
               <div>
-                <h3 className="font-semibold">Conectar com WhatsApp</h3>
-                <p className="text-sm text-gray-300">Configure o webhook para integração com Evolution API</p>
+                <h3 className="font-semibold">Configurar Respostas</h3>
+                <p className="text-sm text-gray-300">Configure como seu agente responderá às mensagens</p>
               </div>
             </div>
-            
             {/* Step 4 */}
             <div 
               onClick={() => goToStep(4)}
@@ -1148,11 +1261,10 @@ const [form, setForm] = useState<AgentForm>({
                 <span className="font-bold">4</span>
               </div>
               <div>
-                <h3 className="font-semibold">Configurar Respostas</h3>
-                <p className="text-sm text-gray-300">Configure como seu agente responderá às mensagens</p>
+                <h3 className="font-semibold">Configurações Adicionais</h3>
+                <p className="text-sm text-gray-300">Configurações avançadas e de sessão</p>
               </div>
             </div>
-            
             {/* Step 5 */}
             <div 
               onClick={() => goToStep(5)}
@@ -1166,8 +1278,8 @@ const [form, setForm] = useState<AgentForm>({
                 <span className="font-bold">5</span>
               </div>
               <div>
-                <h3 className="font-semibold">Configurações Adicionais</h3>
-                <p className="text-sm text-gray-300">Configurações avançadas e de sessão</p>
+                <h3 className="font-semibold">Conectar com WhatsApp</h3>
+                <p className="text-sm text-gray-300">Configure o webhook para integração com Evolution API</p>
               </div>
             </div>
           </div>
