@@ -90,11 +90,6 @@ export default function MinhaContaPanel() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-400">WhatsApp do Zobot</label>
-            <p className="mt-1 text-lg text-white">{profile.whatsapp ? formatPhoneNumber(profile.whatsapp) : 'Não conectado'}</p>
-          </div>
-
-          <div>
             <label className="text-sm font-medium text-gray-400">Email</label>
             <p className="mt-1 text-lg text-white">{profile.email}</p>
           </div>
