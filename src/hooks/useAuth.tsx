@@ -18,12 +18,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[Auth] getSession (init):', session);
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
+    // Forçar detecção de sessão OAuth na URL antes de qualquer navegação
+    (async () => {
+      // Detecta tokens na URL e processa sessão OAuth
+      await supabase.auth.getSession();
+      // Após processar, obtém a sessão atual
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        console.log('[Auth] getSession (init):', session);
+        setSession(session);
+        setUser(session?.user ?? null);
+      });
+    })();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
