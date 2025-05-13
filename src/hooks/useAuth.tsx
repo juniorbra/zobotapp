@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.getSession();
       // Após processar, obtém a sessão atual
       supabase.auth.getSession().then(({ data: { session } }) => {
-        console.log('[Auth] getSession (init):', session);
+        console.log('[Auth] getSession (init):', session ? 'Sessão válida' : 'Sem sessão');
         setSession(session);
         setUser(session?.user ?? null);
       });
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[Auth] onAuthStateChange:', event, session);
+      console.log('[Auth] onAuthStateChange:', event, session ? 'Sessão válida' : 'Sem sessão');
       setSession(session);
       setUser(session?.user ?? null);
     });
@@ -84,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     console.log('[Auth] Iniciando login com Google...');
-    console.log('[Auth] URL de redirecionamento:', `${window.location.origin}/auth/callback`);
     
     // Limpar qualquer sessão anterior
     localStorage.removeItem('supabase.auth.token');
@@ -98,11 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     });
-
-    console.log('[Auth] Resultado do signInWithOAuth:', data);
     
     if (error) {
-      console.error('[Auth] Erro no login com Google:', error);
+      console.error('[Auth] Erro no login com Google');
       throw error;
     }
   };

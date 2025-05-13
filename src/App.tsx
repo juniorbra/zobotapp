@@ -18,16 +18,18 @@ function OAuthCallback() {
   useEffect(() => {
     const processAuth = async () => {
       console.log('[OAuthCallback] Processando callback OAuth...');
-      console.log('[OAuthCallback] URL:', window.location.href);
-      console.log('[OAuthCallback] Hash:', location.hash);
+      
+      // Verificar se há hash na URL sem expor o conteúdo
+      const hasHash = location.hash && location.hash.length > 0;
+      console.log('[OAuthCallback] URL contém hash de autenticação:', hasHash);
       
       try {
         // Forçar processamento dos tokens na URL
         const { data, error } = await supabase.auth.getSession();
-        console.log('[OAuthCallback] Resultado do getSession:', data);
+        console.log('[OAuthCallback] Sessão obtida:', data.session ? 'Sim' : 'Não');
         
         if (error) {
-          console.error('[OAuthCallback] Erro ao processar tokens:', error);
+          console.error('[OAuthCallback] Erro ao processar autenticação');
           setError(error.message);
           return;
         }
@@ -41,7 +43,7 @@ function OAuthCallback() {
           setError('Não foi possível estabelecer sessão. Tente novamente.');
         }
       } catch (err) {
-        console.error('[OAuthCallback] Erro inesperado:', err);
+        console.error('[OAuthCallback] Erro inesperado ao processar autenticação');
         setError('Erro inesperado ao processar autenticação.');
       } finally {
         setIsProcessing(false);
@@ -89,10 +91,9 @@ function RotaProtegida({ children }: { children: React.ReactNode }) {
     location.hash.includes('error')
   );
   
-  console.log('[RotaProtegida] URL atual:', window.location.href);
-  console.log('[RotaProtegida] Hash:', location.hash);
+  console.log('[RotaProtegida] Rota atual:', location.pathname);
   console.log('[RotaProtegida] Tem parâmetros de auth?', hasAuthParams);
-  console.log('[RotaProtegida] Session:', session);
+  console.log('[RotaProtegida] Usuário autenticado?', !!session);
   
   // Se estamos na rota de callback com tokens, mas sem sessão,
   // vamos tentar processar os tokens manualmente
@@ -100,7 +101,7 @@ function RotaProtegida({ children }: { children: React.ReactNode }) {
     console.log('[RotaProtegida] Detectados tokens na URL, processando...');
     // Forçar processamento dos tokens (o Supabase deveria fazer isso automaticamente)
     supabase.auth.getSession().then((result) => {
-      console.log('[RotaProtegida] Resultado do getSession após detectar tokens:', result.data);
+      console.log('[RotaProtegida] Sessão obtida após processar tokens:', !!result.data.session);
     });
     
     // Mostrar uma mensagem de carregamento enquanto processamos
