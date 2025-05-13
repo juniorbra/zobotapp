@@ -83,14 +83,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    console.log('[Auth] Iniciando login com Google...');
+    console.log('[Auth] URL de redirecionamento:', `${window.location.origin}/auth/callback`);
+    
+    // Limpar qualquer sessão anterior
+    localStorage.removeItem('supabase.auth.token');
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/painel-controle`
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          prompt: 'select_account', // Força seleção de conta Google
+        }
       }
     });
 
-    if (error) throw error;
+    console.log('[Auth] Resultado do signInWithOAuth:', data);
+    
+    if (error) {
+      console.error('[Auth] Erro no login com Google:', error);
+      throw error;
+    }
   };
 
   return (
