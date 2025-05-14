@@ -39,8 +39,8 @@ const GoogleOAuthCallback: React.FC = () => {
           },
           body: new URLSearchParams({
             code,
-            client_id: '129040955497-3eci140g1va31b0as1vndd27rfksk1jl.apps.googleusercontent.com',
-            client_secret: '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',
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+            client_secret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
             redirect_uri: 'https://meu.zobot.top/oauth/google/callback',
             grant_type: 'authorization_code'
           }).toString()
