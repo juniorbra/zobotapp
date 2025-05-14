@@ -7,6 +7,12 @@ const GoogleOAuthCallback: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [tokenExchangeAttempted, setTokenExchangeAttempted] = useState(false);
+  const [tokens, setTokens] = useState<{
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+  } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -14,6 +20,14 @@ const GoogleOAuthCallback: React.FC = () => {
   useEffect(() => {
     const processGoogleAuth = async () => {
       console.log('[GoogleOAuthCallback] Processando callback do Google...');
+      
+      // Prevenir múltiplas tentativas de troca de token
+      if (tokenExchangeAttempted) {
+        console.log('[GoogleOAuthCallback] Troca de token já foi tentada, ignorando.');
+        return;
+      }
+      
+      setTokenExchangeAttempted(true);
       
       try {
         // Extrair o código de autorização da URL
@@ -43,7 +57,15 @@ const GoogleOAuthCallback: React.FC = () => {
         
         if (!tokenResponse.ok) {
           const errorData = await tokenResponse.text();
-          throw new Error(`Erro ao trocar código por tokens: ${errorData}`);
+          const errorJson = JSON.parse(errorData);
+          
+          // Tratamento específico para invalid_grant
+          if (errorJson.error === 'invalid_grant') {
+            console.error('[GoogleOAuthCallback] Código de autorização inválido ou já utilizado');
+            throw new Error('Código de autorização inválido ou já utilizado. Por favor, tente novamente.');
+          } else {
+            throw new Error(`Erro ao trocar código por tokens: ${errorData}`);
+          }
         }
         
         const tokenData = await tokenResponse.json();
@@ -60,19 +82,47 @@ const GoogleOAuthCallback: React.FC = () => {
         const expiryDate = new Date();
         expiryDate.setSeconds(expiryDate.getSeconds() + expires_in);
         
-        // Verificar se o usuário está autenticado antes de armazenar tokens
-        if (!user || !user.id) {
-          // Se não estiver autenticado, redirecionar para login
-          navigate('/login', { replace: true });
-          throw new Error('Usuário não autenticado. Por favor, faça login e tente novamente.');
-        }
+        // Armazenar tokens no estado em vez de salvar imediatamente
+        setTokens({
+          access_token,
+          refresh_token,
+          expires_in
+        });
+        
+        console.log('[GoogleOAuthCallback] Tokens obtidos com sucesso e armazenados no estado');
+        
+      } catch (err) {
+        console.error('[GoogleOAuthCallback] Erro:', err);
+        setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+    
+    processGoogleAuth();
+  }, [location, navigate]);
+  
+  // Efeito separado para salvar tokens quando o usuário estiver autenticado
+  useEffect(() => {
+    const saveTokensToSupabase = async () => {
+      // Só prosseguir se tivermos tokens e usuário autenticado
+      if (!tokens || !user || !user.id) {
+        return;
+      }
+      
+      try {
+        console.log('[GoogleOAuthCallback] Usuário autenticado e tokens disponíveis, salvando no Supabase...');
+        
+        // Calcular data de expiração
+        const expiryDate = new Date();
+        expiryDate.setSeconds(expiryDate.getSeconds() + tokens.expires_in);
         
         // Armazenar tokens no Supabase
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            google_access_token: access_token,
-            google_refresh_token: refresh_token,
+            google_access_token: tokens.access_token,
+            google_refresh_token: tokens.refresh_token,
             google_token_expiry: expiryDate.toISOString(),
             google_calendar_connected: true
           })
@@ -89,17 +139,14 @@ const GoogleOAuthCallback: React.FC = () => {
         setTimeout(() => {
           navigate('/configurar-agente', { replace: true });
         }, 2000);
-        
       } catch (err) {
-        console.error('[GoogleOAuthCallback] Erro:', err);
+        console.error('[GoogleOAuthCallback] Erro ao salvar tokens:', err);
         setError(err instanceof Error ? err.message : 'Erro desconhecido');
-      } finally {
-        setIsProcessing(false);
       }
     };
     
-    processGoogleAuth();
-  }, [location, navigate, user]);
+    saveTokensToSupabase();
+  }, [tokens, user, navigate]);
   
   if (isProcessing) {
     return (
