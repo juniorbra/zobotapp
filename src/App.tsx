@@ -7,6 +7,7 @@ import ResetarSenha from './pages/ResetarSenha';
 import ConectarWhatsapp from './pages/ConectarWhatsapp';
 import ConfigurarAgente from './pages/ConfigurarAgente';
 import PainelControle from './pages/PainelControle';
+import GoogleOAuthCallback from './pages/GoogleOAuthCallback';
 
 // Componente específico para lidar com o callback do OAuth
 function OAuthCallback() {
@@ -171,6 +172,10 @@ function App() {
               <ConfigurarAgente />
             </RotaProtegida>
           }
+        />
+        <Route
+          path="/oauth/google/callback"
+          element={<GoogleOAuthCallback />}
         />
       </Routes>
     </BrowserRouter>
