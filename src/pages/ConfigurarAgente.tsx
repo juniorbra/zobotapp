@@ -84,7 +84,7 @@ const [availableModels, setAvailableModels] = useState<LLMModels>({
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
   // Submenu state for IA config vs Prompt Assistant (must be at top level)
-  const [iaTab, setIaTab] = useState<'config' | 'assistant'>('config');
+  const [iaTab, setIaTab] = useState<'config' | 'assistant' | 'agendamentos'>('config');
   
 const [form, setForm] = useState<AgentForm>({
   name: '',
@@ -921,6 +921,16 @@ const [form, setForm] = useState<AgentForm>({
               >
                 Assistente de Prompt
               </button>
+              <button
+                onClick={() => setIaTab('agendamentos')}
+                className={`px-6 py-3 font-medium ${
+                  iaTab === 'agendamentos'
+                    ? 'text-[#3b82f6] border-b-2 border-[#3b82f6]'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Agendamentos
+              </button>
             </div>
             {iaTab === 'config' ? (
               <>
@@ -964,8 +974,18 @@ const [form, setForm] = useState<AgentForm>({
                   ></textarea>
                 </div>
               </>
-            ) : (
+            ) : iaTab === 'assistant' ? (
               <PromptAssistant />
+            ) : (
+              <div className="p-6 text-center text-gray-400">
+                <p className="mb-4">Conecte-se ao Google Calendar para habilitar agendamentos automáticos.</p>
+                <a
+                  href="https://accounts.google.com/o/oauth2/v2/auth?client_id=129040955497-3eci140g1va31b0as1vndd27rfksk1jl.apps.googleusercontent.com&redirect_uri=https://meu.zobot.top/oauth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/calendar&access_type=offline&prompt=consent"
+                  className="inline-block px-6 py-3 bg-[#3b82f6] text-white font-semibold rounded-lg shadow hover:bg-[#2563eb] transition"
+                >
+                  Conectar com Google Calendar
+                </a>
+              </div>
             )}
           </div>
         );
