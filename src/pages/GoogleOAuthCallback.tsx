@@ -16,11 +16,6 @@ const GoogleOAuthCallback: React.FC = () => {
       console.log('[GoogleOAuthCallback] Processando callback do Google...');
       
       try {
-        // Verificar se o usuário está autenticado
-        if (!user || !user.id) {
-          throw new Error('Usuário não autenticado');
-        }
-
         // Extrair o código de autorização da URL
         const urlParams = new URLSearchParams(location.search);
         const code = urlParams.get('code');
@@ -64,6 +59,13 @@ const GoogleOAuthCallback: React.FC = () => {
         // Calcular data de expiração
         const expiryDate = new Date();
         expiryDate.setSeconds(expiryDate.getSeconds() + expires_in);
+        
+        // Verificar se o usuário está autenticado antes de armazenar tokens
+        if (!user || !user.id) {
+          // Se não estiver autenticado, redirecionar para login
+          navigate('/login', { replace: true });
+          throw new Error('Usuário não autenticado. Por favor, faça login e tente novamente.');
+        }
         
         // Armazenar tokens no Supabase
         const { error: updateError } = await supabase
