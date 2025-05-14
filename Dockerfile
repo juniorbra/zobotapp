@@ -3,6 +3,12 @@ FROM node:20-alpine as build
 
 WORKDIR /app
 
+# Define build arguments for environment variables
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_GOOGLE_CLIENT_ID
+ARG VITE_GOOGLE_CLIENT_SECRET
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
@@ -11,6 +17,12 @@ RUN npm ci
 
 # Copy the rest of the code
 COPY . .
+
+# Create .env file from build arguments
+RUN echo "VITE_SUPABASE_URL=${VITE_SUPABASE_URL}" > .env && \
+    echo "VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}" >> .env && \
+    echo "VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}" >> .env && \
+    echo "VITE_GOOGLE_CLIENT_SECRET=${VITE_GOOGLE_CLIENT_SECRET}" >> .env
 
 # Build the application
 RUN npm run build

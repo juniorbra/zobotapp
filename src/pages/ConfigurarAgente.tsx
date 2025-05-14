@@ -980,7 +980,7 @@ const [form, setForm] = useState<AgentForm>({
               <div className="p-6 text-center text-gray-400">
                 <p className="mb-4">Conecte-se ao Google Calendar para habilitar agendamentos automáticos.</p>
                 <a
-                  href="https://accounts.google.com/o/oauth2/v2/auth?client_id=***REMOVED***&redirect_uri=https://meu.zobot.top/oauth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/calendar&access_type=offline&prompt=consent"
+                  href="https://accounts.google.com/o/oauth2/v2/auth?client_id=129040955497-3eci140g1va31b0as1vndd27rfksk1jl.apps.googleusercontent.com&redirect_uri=https://meu.zobot.top/oauth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/calendar&access_type=offline&prompt=consent"
                   className="inline-block px-6 py-3 bg-[#3b82f6] text-white font-semibold rounded-lg shadow hover:bg-[#2563eb] transition"
                 >
                   Conectar com Google Calendar
