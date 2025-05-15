@@ -209,10 +209,77 @@ const GoogleCalendarStatus: React.FC<GoogleCalendarStatusProps> = ({ agentId, on
     );
   }
   
+  // Debug information
+  console.log('[GoogleCalendarStatus] Rendering with:', {
+    agentId,
+    isConnected,
+    isLoading,
+    settingsLoaded: !!settings
+  });
+
+  // If no agent ID is provided and not connected, just show the connection UI
+  if (!agentId && !isConnected) {
+    return (
+      <div className="p-6 text-center text-gray-400">
+        <p className="mb-4">Conecte-se ao Google Calendar para habilitar agendamentos automáticos.</p>
+        <a
+          href="https://accounts.google.com/o/oauth2/v2/auth?client_id=129040955497-3eci140g1va31b0as1vndd27rfksk1jl.apps.googleusercontent.com&redirect_uri=https://meu.zobot.top/oauth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/calendar&access_type=offline&prompt=consent"
+          className="w-full max-w-md mx-auto flex items-center justify-center bg-white text-gray-800 py-2 px-4 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-normal text-base shadow transition"
+          style={{ minWidth: 260 }}
+        >
+          <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <g>
+              <path fill="#4285F4" d="M21.805 10.023h-9.765v3.954h5.592c-.241 1.262-1.45 3.707-5.592 3.707-3.363 0-6.099-2.785-6.099-6.207s2.736-6.207 6.099-6.207c1.92 0 3.21.819 3.948 1.523l2.697-2.62C17.13 2.7 14.98 1.7 12.5 1.7 6.977 1.7 2.5 6.18 2.5 11.5s4.477 9.8 10 9.8c5.74 0 9.5-4.03 9.5-9.7 0-.65-.07-1.14-.19-1.5z"/>
+            </g>
+          </svg>
+          Conectar com Google Calendar
+        </a>
+      </div>
+    );
+  }
+  
   return (
     <div className="p-6">
-      {renderConnectionStatus()}
+      {/* Connection status */}
+      {isConnected ? (
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+            <span className="text-green-400 font-medium">Conectado ao Google Calendar</span>
+          </div>
+          <button
+            onClick={handleDisconnect}
+            className="text-sm text-red-400 hover:text-red-300"
+          >
+            Desconectar
+          </button>
+        </div>
+      ) : (
+        <div className="mb-6">
+          <div className="p-4 text-center text-gray-400 bg-[#1e2738] rounded-lg mb-4">
+            <p className="mb-4">Conecte-se ao Google Calendar para habilitar agendamentos automáticos.</p>
+            <a
+              href="https://accounts.google.com/o/oauth2/v2/auth?client_id=129040955497-3eci140g1va31b0as1vndd27rfksk1jl.apps.googleusercontent.com&redirect_uri=https://meu.zobot.top/oauth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/calendar&access_type=offline&prompt=consent"
+              className="w-full max-w-md mx-auto flex items-center justify-center bg-white text-gray-800 py-2 px-4 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-normal text-base shadow transition"
+              style={{ minWidth: 260 }}
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <g>
+                  <path fill="#4285F4" d="M21.805 10.023h-9.765v3.954h5.592c-.241 1.262-1.45 3.707-5.592 3.707-3.363 0-6.099-2.785-6.099-6.207s2.736-6.207 6.099-6.207c1.92 0 3.21.819 3.948 1.523l2.697-2.62C17.13 2.7 14.98 1.7 12.5 1.7 6.977 1.7 2.5 6.18 2.5 11.5s4.477 9.8 10 9.8c5.74 0 9.5-4.03 9.5-9.7 0-.65-.07-1.14-.19-1.5z"/>
+                </g>
+              </svg>
+              Conectar com Google Calendar
+            </a>
+          </div>
+        </div>
+      )}
       
+      {/* Debug information */}
+      <div className="bg-yellow-900/30 border border-yellow-600 text-yellow-200 rounded-lg p-4 mb-4">
+        <p>Debug: agentId={agentId}, isConnected={isConnected.toString()}</p>
+      </div>
+      
+      {/* Always show settings if agent ID is provided */}
       {agentId && (
         <div className="space-y-8">
           {/* Permissões do Agente */}
