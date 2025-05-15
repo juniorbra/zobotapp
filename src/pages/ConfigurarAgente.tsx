@@ -983,7 +983,10 @@ const [form, setForm] = useState<AgentForm>({
                 <div className="bg-yellow-900/30 border border-yellow-600 text-yellow-200 rounded-lg p-4 mb-4">
                   <p>Debug: id={id}, isNewAgent={isNewAgent.toString()}</p>
                 </div>
-                <GoogleCalendarStatus agentId={id !== 'new' ? id : undefined} />
+                <GoogleCalendarStatus 
+                  agentId={id !== 'new' ? id : undefined} 
+                  key={`calendar-status-${id}`} // Add a key to force re-render when id changes
+                />
               </>
             )}
           </div>

@@ -196,6 +196,14 @@ const GoogleCalendarStatus: React.FC<GoogleCalendarStatusProps> = ({ agentId, on
   }
   
   
+  // Store agent ID in localStorage when component mounts
+  useEffect(() => {
+    if (agentId) {
+      localStorage.setItem('current_agent_id', agentId);
+      console.log('[GoogleCalendarStatus] Stored agent ID in localStorage on mount:', agentId);
+    }
+  }, [agentId]);
+
   // Debug information
   console.log('[GoogleCalendarStatus] Rendering with:', {
     agentId,
@@ -256,6 +264,13 @@ const GoogleCalendarStatus: React.FC<GoogleCalendarStatusProps> = ({ agentId, on
               href="https://accounts.google.com/o/oauth2/v2/auth?client_id=129040955497-3eci140g1va31b0as1vndd27rfksk1jl.apps.googleusercontent.com&redirect_uri=https://meu.zobot.top/oauth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/calendar&access_type=offline&prompt=consent"
               className="w-full max-w-md mx-auto flex items-center justify-center bg-white text-gray-800 py-2 px-4 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-normal text-base shadow transition"
               style={{ minWidth: 260 }}
+              onClick={() => {
+                // Store the agent ID in localStorage before redirecting
+                if (agentId) {
+                  localStorage.setItem('current_agent_id', agentId);
+                  console.log('[GoogleCalendarStatus] Stored agent ID in localStorage:', agentId);
+                }
+              }}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <g>
