@@ -22,3 +22,4 @@ DROP TABLE IF EXISTS public.folwup_stages;
 
 -- Add comment to table
 COMMENT ON TABLE public.folwup_msgs IS 'Table for storing follow-up messages for agents';
+ 
