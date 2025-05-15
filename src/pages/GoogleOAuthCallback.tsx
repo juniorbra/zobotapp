@@ -135,9 +135,16 @@ const GoogleOAuthCallback: React.FC = () => {
         console.log('[GoogleOAuthCallback] Tokens armazenados com sucesso');
         setSuccess(true);
         
+        // Verificar se há um agentId no localStorage
+        const agentId = localStorage.getItem('current_agent_id');
+        
         // Redirecionar após 2 segundos
         setTimeout(() => {
-          navigate('/configurar-agente', { replace: true });
+          if (agentId) {
+            navigate(`/configurar-agente/${agentId}`, { replace: true });
+          } else {
+            navigate('/configurar-agente', { replace: true });
+          }
         }, 2000);
       } catch (err) {
         console.error('[GoogleOAuthCallback] Erro ao salvar tokens:', err);
