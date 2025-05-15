@@ -238,6 +238,7 @@ const GoogleCalendarStatus: React.FC<GoogleCalendarStatusProps> = ({ agentId, on
       {/* Always show settings if agent ID is provided */}
       {agentId && (
         <div className="space-y-8">
+          {/* Permissões do Agente */}
           <div>
             <h3 className="text-lg font-medium text-white mb-4">🔄 Permissões do Agente</h3>
             <p className="text-gray-400 mb-2">Modo de acesso ao Google Calendar:</p>
@@ -256,6 +257,51 @@ const GoogleCalendarStatus: React.FC<GoogleCalendarStatusProps> = ({ agentId, on
                 <div className="ml-3">
                   <span className="text-white">Apenas visualizar disponibilidade</span>
                   <p className="text-gray-400 text-sm">A IA pode consultar eventos, mas não pode agendar nada</p>
+                </div>
+              </label>
+              
+              <label className="flex items-start">
+                <input
+                  type="radio"
+                  name="access_mode"
+                  value="create_events"
+                  checked={settings.access_mode === 'create_events'}
+                  onChange={() => setSettings({...settings, access_mode: 'create_events'})}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
+                />
+                <div className="ml-3">
+                  <span className="text-white">Criar eventos</span>
+                  <p className="text-gray-400 text-sm">A IA pode agendar compromissos, mas não pode alterar nem excluir</p>
+                </div>
+              </label>
+              
+              <label className="flex items-start">
+                <input
+                  type="radio"
+                  name="access_mode"
+                  value="create_edit_events"
+                  checked={settings.access_mode === 'create_edit_events'}
+                  onChange={() => setSettings({...settings, access_mode: 'create_edit_events'})}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
+                />
+                <div className="ml-3">
+                  <span className="text-white">Criar e editar eventos</span>
+                  <p className="text-gray-400 text-sm">A IA pode agendar e atualizar eventos já existentes</p>
+                </div>
+              </label>
+              
+              <label className="flex items-start">
+                <input
+                  type="radio"
+                  name="access_mode"
+                  value="full_control"
+                  checked={settings.access_mode === 'full_control'}
+                  onChange={() => setSettings({...settings, access_mode: 'full_control'})}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
+                />
+                <div className="ml-3">
+                  <span className="text-white">Controle total</span>
+                  <p className="text-gray-400 text-sm">A IA pode criar, editar e excluir eventos</p>
                 </div>
               </label>
             </div>
